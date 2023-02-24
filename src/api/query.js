@@ -1,19 +1,19 @@
-import request from '@/utils/request'
+import request from '@/utils/request';
 // import { Base64 } from 'js-base64'
 
 const formatData = (data) => {
-  const requestData = new FormData()
+  const requestData = new FormData();
   for (const key in data) {
     if (Object.hasOwnProperty.call(data, key)) {
-      const item = data[key]
+      const item = data[key];
       if (item) {
         // 空数据不传
-        requestData.append(key, item)
+        requestData.append(key, item);
       }
     }
   }
-  return requestData
-}
+  return requestData;
+};
 
 export const login = (data) => {
   return request({
@@ -23,8 +23,8 @@ export const login = (data) => {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     data: formatData(data)
-  })
-}
+  });
+};
 
 export const orderlist = (data) => {
   return request({
@@ -34,8 +34,8 @@ export const orderlist = (data) => {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     data: formatData(data)
-  })
-}
+  });
+};
 
 export const expressdata = (data) => {
   return request({
@@ -45,8 +45,8 @@ export const expressdata = (data) => {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     data: formatData(data)
-  })
-}
+  });
+};
 
 export const getarea = (data) => {
   return request({
@@ -56,8 +56,8 @@ export const getarea = (data) => {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     data: formatData(data)
-  })
-}
+  });
+};
 
 export const placeorder = (data) => {
   return request({
@@ -67,8 +67,8 @@ export const placeorder = (data) => {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     data: formatData(data)
-  })
-}
+  });
+};
 
 export const addressbooklist = (data) => {
   return request({
@@ -78,5 +78,5 @@ export const addressbooklist = (data) => {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     data: formatData(data)
-  })
-}
+  });
+};

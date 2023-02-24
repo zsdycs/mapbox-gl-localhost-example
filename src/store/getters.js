@@ -3,5 +3,5 @@ const getters = {
   device: state => state.app.device,
   token: state => state.user.token,
   name: state => state.user.token.username
-}
-export default getters
+};
+export default getters;

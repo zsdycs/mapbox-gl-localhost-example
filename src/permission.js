@@ -1,21 +1,21 @@
-import router from './router'
+import router from './router';
 // import { Message } from 'element-ui'
-import NProgress from 'nprogress' // progress bar
-import 'nprogress/nprogress.css' // progress bar style
+import NProgress from 'nprogress'; // progress bar
+import 'nprogress/nprogress.css'; // progress bar style
 // import { getToken } from '@/utils/auth' // get token from cookie
-import getPageTitle from '@/utils/get-page-title'
+import getPageTitle from '@/utils/get-page-title';
 
-NProgress.configure({ showSpinner: false }) // NProgress Configuration
+NProgress.configure({ showSpinner: false }); // NProgress Configuration
 
 // const whiteList = ['/login'] // no redirect whitelist
 
 router.beforeEach(async(to, from, next) => {
   // start progress bar
-  NProgress.start()
-  next()
-  NProgress.done()
+  NProgress.start();
+  next();
+  NProgress.done();
   // set page title
-  document.title = getPageTitle(to.meta.title)
+  document.title = getPageTitle(to.meta.title);
 
   // determine whether the user has logged in
   // const hasToken = getToken()
@@ -46,9 +46,9 @@ router.beforeEach(async(to, from, next) => {
   //     NProgress.done()
   //   }
   // }
-})
+});
 
 router.afterEach(() => {
   // finish progress bar
-  NProgress.done()
-})
+  NProgress.done();
+});
