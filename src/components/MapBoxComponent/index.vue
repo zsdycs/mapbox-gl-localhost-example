@@ -72,17 +72,17 @@ export default {
     mapStyle: {
       handler: function(newValue, oldValue) {
         if (!!newValue && !!this.mapInfoMarkGeojson && !isEqual(newValue, oldValue)) {
-          console.log('---1---- mapStyle ----------newValue, oldValue', newValue, oldValue);
+          // console.log('---1---- mapStyle ----------newValue, oldValue', newValue, oldValue);
           // 更新整个图表
           this.loadMapChartObj();
         }
-        console.log('----2--- mapStyle ----------');
+        // console.log('----2--- mapStyle ----------');
       }
     },
     mapInfoMarkGeojson: {
       handler: function(newValue, oldValue) {
-        console.log('---1---- mapInfoMarkGeojson ----------newValue, oldValue', newValue, oldValue);
-        console.log('======= mapInfoMarkGeojson this.mapChartObj =========', this.mapChartObj);
+        // console.log('---1---- mapInfoMarkGeojson ----------newValue, oldValue', newValue, oldValue);
+        // console.log('======= mapInfoMarkGeojson this.mapChartObj =========', this.mapChartObj);
         if (newValue && !!this.mapStyle && !isEqual(newValue, oldValue)) {
           this.mapInfoMarkGeojson = newValue;
           // 保存当前的 mapInfoMarkGeojson
@@ -95,7 +95,7 @@ export default {
             this.updatedInfoMarkLayer();
           }
         }
-        console.log('----2--- mapInfoMarkGeojson ----------');
+        // console.log('----2--- mapInfoMarkGeojson ----------');
       }
     }
   },
@@ -166,7 +166,7 @@ export default {
     },
     // 更新 infoMarkLayer
     updatedInfoMarkLayer() {
-      console.log('======= updatedInfoMarkLayer =========', this.mapChartObj);
+      // console.log('======= updatedInfoMarkLayer =========', this.mapChartObj);
       if (this.mapChartObj.getLayer('infoMarkLayer')) {
         this.mapChartObj.removeLayer('infoMarkLayer');
       }
@@ -207,7 +207,7 @@ export default {
               return newCoordinates[0] === oldCoordinates[0] && newCoordinates[1] === oldCoordinates[1];
             });
             if (oldMarkerObj) {
-              console.log('=========itemNewMarker', itemNewMarker);
+              // console.log('=========itemNewMarker', itemNewMarker);
               itemNewMarker.marker.remove();
               this.markerPool.splice(currentNewIndex, 1);
             }
@@ -229,7 +229,7 @@ export default {
             });
           }
         });
-        console.log('==========this.markerPool', this.markerPool);
+        // console.log('==========this.markerPool', this.markerPool);
       }
     },
     // 鼠标点击 事件处理
