@@ -43,10 +43,28 @@ export const makePlaceInfoExampleGeojson = ({ placeInfo, coordinates }) => {
             <div>此标点位置，通过 geojson 定义</div>
             <div>动态数据：${placeInfo.example}</div>
             <div class="custom-color">自定义的文字颜色</div>`,
+            icon: 'icon-target1'
           },
           geometry: {
             type: 'Point',
             coordinates,
+          },
+        },
+        {
+          type: 'Feature',
+          properties: {
+            description: `<strong>标题示例</strong>
+            <div>此标点位置，通过 geojson 定义</div>
+            <div>动态数据：${placeInfo.example}</div>
+            <div class="custom-color">自定义的文字颜色</div>`,
+            icon: 'icon-target2'
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [
+              120.62709928026642,
+              31.276055232411447,
+            ],
           },
         },
       ],

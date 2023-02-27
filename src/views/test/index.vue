@@ -8,7 +8,7 @@
       </div> -->
       <!-- 点击标注点显示信息 -->
       <div class="example-box">
-        <p class="title">点击标注点显示信息</p>
+        <p class="title">点击标注点显示信息 {{ placeInfo.example }}</p>
         <div id="place-info-example" class="map-content" />
       </div>
       <!-- canvas -->
@@ -17,8 +17,22 @@
         <canvas ref="canvasID" width="500" height="500">Canvas not supported</canvas>
         <div id="canvas-example" class="map-content" />
       </div> -->
+      <!-- 组件使用 -->
+      <div class="example-box">
+        <p class="title">组件使用</p>
+        <MapBoxComponent
+          :map-style="MAP_BOX_COMPONENT_EXAMPLE_STYLE"
+          :map-info-mark-geojson="mapBoxComponent_mapInfoMarkGeojson"
+          :map-options="mapBoxComponent_mapOptions"
+          :icon-sprit-img="mapBoxComponent_iconSpritImg"
+          :title-marker="mapBoxComponent_titleMarker"
+          class="map-content"
+          @mouseenterInfoMarkLayer="mouseenterInfoMarkLayer"
+          @clickInfoMarkLayer="clickInfoMarkLayer"
+        />
+      </div>
     </div>
-    <button class="btn" @click="getMapInfo()">获取地图信息</button>
+    <button class="btn" @click="updatedMapBoxComponentData()">更新组件使用例子的数据</button>
   </div>
 </template>
 
@@ -32,8 +46,15 @@ import {
 } from './config/place-info-example';
 // import { CANVAS_EXAMPLE_MAP_STYLE } from './config/canvas-example';
 // import { Circle } from './config/index';
+import MapBoxComponent from '@/components/MapBoxComponent/index.vue';
+import {
+  MAP_BOX_COMPONENT_EXAMPLE_STYLE,
+  MAP_BOX_COMPONENT_EXAMPLE_MOCK,
+  makeExampleMockGeojson,
+} from './config/map-box-component-example';
 
 export default {
+  components: { MapBoxComponent },
   data() {
     return {
       baseExampleMap: null,
@@ -43,6 +64,38 @@ export default {
         example: 0,
       },
       placeInfoInterval: null,
+      MAP_BOX_COMPONENT_EXAMPLE_STYLE,
+      mapBoxComponent_mapInfoMarkGeojson: null,
+      mapBoxComponent_mapOptions: {
+        zoom: 17,
+        center: [120.62709987026642, 31.276455231411447],
+        hash: false,
+        maxZoom: 17,
+        minZoom: 2,
+      },
+      mapBoxComponent_iconSpritImg: {
+        spritUrl: 'http://localhost:9528/icon-sprite.png', // 雪碧图url地址
+        iconInfos: [
+          {
+            key: 'icon-target1', // 图标的唯一key
+            width: 30, // 图标宽度
+            height: 30, // 图标高度
+            x: 0, // 左上角位于雪碧图的x坐标
+            y: 0, // 左上角位于雪碧图的y坐标
+          },
+          {
+            key: 'icon-target2', // 图标的唯一key
+            width: 30, // 图标宽度
+            height: 30, // 图标高度
+            x: 30, // 左上角位于雪碧图的x坐标
+            y: 0, // 左上角位于雪碧图的y坐标
+          }
+        ]
+      },
+      mapBoxComponent_titleMarker: {
+        element: `<div class="place-title">标记点名称</div>`, // html 字符串
+      },
+      mapBoxComponent_setTimeout: null,
     };
   },
   mounted() {
@@ -56,13 +109,19 @@ export default {
     this.placeInfoInterval = setInterval(() => {
       //  随机生成数据
       this.placeInfo.example = Math.floor(Math.random() * 1000);
-      console.log('=======更新 infoMarkLayer=====', this.placeInfo.example);
       // 更新 infoMarkLayer
       this.updatedInfoMarkLayer({ placeInfo: this.placeInfo });
     }, 5000);
+
+    // 模拟API在一秒后返回“组件使用例子”的 Geojson
+    this.mapBoxComponent_setTimeout = setTimeout(() => {
+      this.mapBoxComponent_mapInfoMarkGeojson = MAP_BOX_COMPONENT_EXAMPLE_MOCK;
+    }, 1000);
   },
+  updated() {},
   destroyed() {
     clearInterval(this.placeInfoInterval);
+    clearTimeout(this.mapBoxComponent_setTimeout);
   },
   methods: {
     // 加载 基础
@@ -91,7 +150,7 @@ export default {
       // 点击标注点显示信息 load 事件
       this.onLoadPlaceInfoExample({ placeInfo: this.placeInfo });
       // 点击标注点显示信息 单击事件处理
-      this.clickPlaceInfoExample();
+      // this.clickPlaceInfoExample();
       // 点击标注点显示信息 鼠标事件处理
       this.mouseEventPlaceInfoExample();
     },
@@ -103,37 +162,61 @@ export default {
     },
     // 点击标注点显示信息 加载 infoMarkLayer
     loadPlaceInfoExampleInfoMarkLayer() {
-      this.placeInfoExample.loadImage(
-        'http://localhost:9528/target.png',
-        (error, image) => {
-          if (error) throw error;
-          this.placeInfoExample.addImage('icon-target', image);
-          // TODO 请求 API 返回数据后 => 1.赋值 this.placeInfo，2.加载点位
-          const coordinates = [
-            120.62709987026642,
-            31.276455231411447,
-          ];
-          this.placeInfoExample.addSource(
-            'infoMarkLayerSource',
-            makePlaceInfoExampleGeojson({ placeInfo: this.placeInfo, coordinates })
-          );
-          const el = document.createElement('div');
-          el.innerHTML = `<div class="place-title">标记点名称</div>`;
-          new mapboxgl.Marker(el, { offset: [35, -25] })
-            .setLngLat(coordinates)
-            .addTo(this.placeInfoExample);
-
-          // 添加显示 places 的图层
-          this.placeInfoExample.addLayer({
-            id: 'infoMarkLayer',
-            type: 'symbol',
-            source: 'infoMarkLayerSource',
-            layout: {
-              'icon-image': 'icon-target',
-              'icon-allow-overlap': true,
-            },
-          });
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const iconSpritImg = new Image();
+      iconSpritImg.src = 'http://localhost:9528/icon-sprite.png';
+      iconSpritImg.onload = () => {
+        canvas.width = iconSpritImg.width;
+        canvas.height = iconSpritImg.height;
+        ctx.drawImage(iconSpritImg, 0, 0);
+        const iconList = [
+          {
+            key: 'icon-target1',
+            width: 30,
+            height: 30,
+            x: 0,
+            y: 0,
+          },
+          {
+            key: 'icon-target2',
+            width: 30,
+            height: 30,
+            x: 30,
+            y: 0,
+          }
+        ];
+        iconList.forEach((itemIcon) => {
+          const { key, width, height, x, y } = itemIcon;
+          const data = ctx.getImageData(x, y, width, height).data;
+          this.placeInfoExample.addImage(key, { width, height, data });
         });
+        // TODO 请求 API 返回数据后 => 1.赋值 this.placeInfo，2.加载点位
+        const coordinates = [
+          120.62709987026642,
+          31.276455231411447,
+        ];
+        this.placeInfoExample.addSource(
+          'infoMarkLayerSource',
+          makePlaceInfoExampleGeojson({ placeInfo: this.placeInfo, coordinates })
+        );
+        const el = document.createElement('div');
+        el.innerHTML = `<div class="place-title">标记点名称</div>`;
+        new mapboxgl.Marker(el, { offset: [35, -25] })
+          .setLngLat(coordinates)
+          .addTo(this.placeInfoExample);
+
+        // 添加显示 places 的图层
+        this.placeInfoExample.addLayer({
+          id: 'infoMarkLayer',
+          type: 'symbol',
+          source: 'infoMarkLayerSource',
+          layout: {
+            'icon-image': ['get', 'icon'],
+            'icon-allow-overlap': true,
+          },
+        });
+      };
     },
     // 更新 infoMarkLayer
     updatedInfoMarkLayer({ placeInfo }) {
@@ -164,7 +247,7 @@ export default {
         type: 'symbol',
         source: 'infoMarkLayerSource',
         layout: {
-          'icon-image': 'icon-target',
+          'icon-image': ['get', 'icon'],
           'icon-allow-overlap': true,
         },
       });
@@ -187,15 +270,79 @@ export default {
     },
     // 点击标注点显示信息 鼠标事件处理
     mouseEventPlaceInfoExample() {
+      const popup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+      });
       // 当鼠标位于places图层上时，将光标更改为指针。
-      this.placeInfoExample.on('mouseenter', 'infoMarkLayer', () => {
+      this.placeInfoExample.on('mouseenter', 'infoMarkLayer', (e) => {
         this.placeInfoExample.getCanvas().style.cursor = 'pointer';
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const description = e.features[0].properties.description;
+
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+
+        popup.setLngLat(e.features[0].geometry.coordinates)
+          .setHTML(description)
+          .addTo(this.placeInfoExample);
       });
 
       // 当它离开时，将其改回指针。
       this.placeInfoExample.on('mouseleave', 'infoMarkLayer', () => {
         this.placeInfoExample.getCanvas().style.cursor = '';
+        popup.remove();
       });
+    },
+    updatedMapBoxComponentData() {
+      const placeInfos = [];
+      const coordinates = [];
+      let i = 0;
+      while (i < 4) {
+        i++;
+        placeInfos.push(Math.floor(Math.random() * 1000));
+        const plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+        coordinates.push([
+          120.62709987026642 + Math.floor(Math.random() * 10) * 0.001 * plusOrMinus,
+          31.2764065231411447 + Math.floor(Math.random() * 10) * 0.001 * plusOrMinus,
+        ]);
+      }
+      this.mapBoxComponent_mapInfoMarkGeojson = makeExampleMockGeojson({ placeInfos, coordinates });
+    },
+    clickInfoMarkLayer({
+      layerEvent,
+      mapChartObj,
+      mapboxgl,
+    }) {
+      const coordinates = layerEvent.features[0].geometry.coordinates.slice();
+      const description = layerEvent.features[0].properties.description;
+
+      while (Math.abs(layerEvent.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += layerEvent.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+
+      new mapboxgl.Popup()
+        .setLngLat(layerEvent.features[0].geometry.coordinates)
+        .setHTML(description)
+        .addTo(mapChartObj);
+    },
+    mouseenterInfoMarkLayer({
+      layerEvent,
+      mapChartObj,
+      popup,
+    }) {
+      mapChartObj.getCanvas().style.cursor = 'pointer';
+      const coordinates = layerEvent.features[0].geometry.coordinates.slice();
+      const description = layerEvent.features[0].properties.description;
+
+      while (Math.abs(layerEvent.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += layerEvent.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+
+      popup.setLngLat(layerEvent.features[0].geometry.coordinates)
+        .setHTML(description)
+        .addTo(mapChartObj);
     },
     // 加载 canvas 例子
     // loadCanvasExample() {
