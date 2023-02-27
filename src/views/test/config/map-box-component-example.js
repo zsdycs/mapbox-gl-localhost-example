@@ -107,13 +107,13 @@ export const MAP_BOX_COMPONENT_EXAMPLE_MOCK = {
         properties: {
           description: `<strong>标题示例</strong>
           <div>此标点位置，通过 geojson 定义</div>
-          <div>动态数据：${222}</div>
+          <div>动态数据：${1111}</div>
           <div class="custom-color">自定义的文字颜色</div>`,
           icon: 'icon-target1'
         },
         geometry: {
           type: 'Point',
-          coordinates: [120.62719987026642, 31.276355231411447],
+          coordinates: [120.62619987026642, 31.276355231411447],
         },
       },
       {
@@ -121,15 +121,49 @@ export const MAP_BOX_COMPONENT_EXAMPLE_MOCK = {
         properties: {
           description: `<strong>标题示例</strong>
           <div>此标点位置，通过 geojson 定义</div>
-          <div>动态数据：${444}</div>
+          <div>动态数据：${2222}</div>
+          <div class="custom-color">自定义的文字颜色</div>`,
+          icon: 'icon-target1'
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [
+            120.62839928026642,
+            31.276015232411447,
+          ],
+        },
+      },
+      {
+        type: 'Feature',
+        properties: {
+          description: `<strong>标题示例</strong>
+          <div>此标点位置，通过 geojson 定义</div>
+          <div>动态数据：${3333}</div>
           <div class="custom-color">自定义的文字颜色</div>`,
           icon: 'icon-target2'
         },
         geometry: {
           type: 'Point',
           coordinates: [
-            120.62729928026642,
-            31.276035232411447,
+            120.62659928026642,
+            31.274035232411447,
+          ],
+        },
+      },
+      {
+        type: 'Feature',
+        properties: {
+          description: `<strong>标题示例</strong>
+          <div>此标点位置，通过 geojson 定义</div>
+          <div>动态数据：${4444}</div>
+          <div class="custom-color">自定义的文字颜色</div>`,
+          icon: 'icon-target2'
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [
+            120.62869928026642,
+            31.274015232411447,
           ],
         },
       },
