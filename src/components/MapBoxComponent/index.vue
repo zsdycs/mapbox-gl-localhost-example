@@ -60,7 +60,7 @@ export default {
   },
   data() {
     return {
-      mapChartObj: null, // 图表实例对象
+      mapChart: null, // 图表实例对象
       placeInfo: {
         example: 0,
       },
@@ -82,12 +82,12 @@ export default {
     mapInfoMarkGeojson: {
       handler: function(newValue, oldValue) {
         // console.log('---1---- mapInfoMarkGeojson ----------newValue, oldValue', newValue, oldValue);
-        // console.log('======= mapInfoMarkGeojson this.mapChartObj =========', this.mapChartObj);
+        // console.log('======= mapInfoMarkGeojson this.mapChart =========', this.mapChart);
         if (newValue && !!this.mapStyle && !isEqual(newValue, oldValue)) {
           this.mapInfoMarkGeojson = newValue;
           // 保存当前的 mapInfoMarkGeojson
           this.oldMapInfoMarkGeojson = oldValue;
-          if (!this.mapChartObj) {
+          if (!this.mapChart) {
             // 未加载图表实例
             this.loadMapChartObj();
           } else {
@@ -104,7 +104,7 @@ export default {
   methods: {
     // 加载 点击标注点显示信息
     loadMapChartObj() {
-      this.mapChartObj = new mapboxgl.Map({
+      this.mapChart = new mapboxgl.Map({
         container: this.$refs.mapContainerRef,
         style: this.mapStyle,
         ...this.mapOptions,
@@ -115,11 +115,33 @@ export default {
       this.clickInfoMarkLayer();
       // 鼠标事件处理
       this.mouseenterInfoMarkLayer();
+
+      this.mapChart.on('move', () => {
+        this.$emit('move', {
+          zoom: this.mapChart.getZoom() + 1,
+          center: this.mapChart.getCenter(),
+        });
+      });
+
+      this.mapChart.on('zoom', () => {
+        this.$emit('zoom', {
+          zoom: this.mapChart.getZoom() + 1,
+          center: this.mapChart.getCenter(),
+        });
+      });
+
+      // 全屏
+      this.mapChart.addControl(new mapboxgl.FullscreenControl());
     },
     // 点击标注点显示信息 load 事件
     onLoadMapChartObj() {
-      this.mapChartObj.on('load', () => {
+      this.mapChart.on('load', () => {
         this.loadMapChartObjInfoMarkLayer();
+        this.$emit('load', {
+          zoom: this.mapChart.getZoom() + 1,
+          center: this.mapChart.getCenter(),
+          mapChart: this.mapChart,
+        });
       });
     },
     // 加载 infoMarkLayer 的图层
@@ -142,9 +164,9 @@ export default {
           iconInfos.forEach((itemIcon) => {
             const { key, width, height, x, y } = itemIcon;
             const data = ctx.getImageData(x, y, width, height).data;
-            this.mapChartObj.addImage(key, { width, height, data });
+            this.mapChart.addImage(key, { width, height, data });
           });
-          this.mapChartObj.addSource(
+          this.mapChart.addSource(
             'infoMarkLayerSource',
             this.mapInfoMarkGeojson,
           );
@@ -152,7 +174,7 @@ export default {
           this.updateTitleMarker();
 
           // 添加显示 infoMarkLayer 的图层
-          this.mapChartObj.addLayer({
+          this.mapChart.addLayer({
             id: 'infoMarkLayer',
             type: 'symbol',
             source: 'infoMarkLayerSource',
@@ -166,24 +188,24 @@ export default {
     },
     // 更新 infoMarkLayer
     updatedInfoMarkLayer() {
-      // console.log('======= updatedInfoMarkLayer =========', this.mapChartObj);
-      if (this.mapChartObj.getLayer('infoMarkLayer')) {
-        this.mapChartObj.removeLayer('infoMarkLayer');
+      // console.log('======= updatedInfoMarkLayer =========', this.mapChart);
+      if (this.mapChart.getLayer('infoMarkLayer')) {
+        this.mapChart.removeLayer('infoMarkLayer');
       }
-      if (this.mapChartObj.getSource('infoMarkLayerSource')) {
-        this.mapChartObj.removeSource('infoMarkLayerSource');
+      if (this.mapChart.getSource('infoMarkLayerSource')) {
+        this.mapChart.removeSource('infoMarkLayerSource');
       }
 
       // 更新 marker
       this.updateTitleMarker();
 
-      this.mapChartObj.addSource(
+      this.mapChart.addSource(
         'infoMarkLayerSource',
         this.mapInfoMarkGeojson,
       );
 
       // 添加显示 places 的图层
-      this.mapChartObj.addLayer({
+      this.mapChart.addLayer({
         id: 'infoMarkLayer',
         type: 'symbol',
         source: 'infoMarkLayerSource',
@@ -219,9 +241,9 @@ export default {
           el.innerHTML = this.titleMarker?.element;
           if (itemGeoFeature?.geometry?.coordinates) {
             const coordinates = itemGeoFeature?.geometry?.coordinates;
-            const itemTitleMarker = new mapboxgl.Marker(el, { offset: [35, -25] })
+            const itemTitleMarker = new mapboxgl.Marker({ element: el, offset: [35, -25] })
               .setLngLat(coordinates)
-              .addTo(this.mapChartObj);
+              .addTo(this.mapChart);
             // 将 itemTitleMarker 存到 markerPool 以备 marker.remove() 使用
             this.markerPool.push({
               marker: itemTitleMarker,
@@ -234,10 +256,10 @@ export default {
     },
     // 鼠标点击 事件处理
     clickInfoMarkLayer() {
-      this.mapChartObj.on('click', 'infoMarkLayer', (event) => {
+      this.mapChart.on('click', 'infoMarkLayer', (event) => {
         this.$emit('clickInfoMarkLayer', {
           layerEvent: event,
-          mapChartObj: this.mapChartObj,
+          mapChart: this.mapChart,
           mapboxgl,
         });
       });
@@ -249,17 +271,17 @@ export default {
         closeOnClick: false,
       });
       // 当鼠标位于places图层上时，将光标更改为指针。
-      this.mapChartObj.on('mouseenter', 'infoMarkLayer', (event) => {
+      this.mapChart.on('mouseenter', 'infoMarkLayer', (event) => {
         this.$emit('mouseenterInfoMarkLayer', {
           layerEvent: event,
-          mapChartObj: this.mapChartObj,
+          mapChart: this.mapChart,
           popup,
         });
       });
 
       // 当它离开时，将其改回指针。
-      this.mapChartObj.on('mouseleave', 'infoMarkLayer', () => {
-        this.mapChartObj.getCanvas().style.cursor = '';
+      this.mapChart.on('mouseleave', 'infoMarkLayer', () => {
+        this.mapChart.getCanvas().style.cursor = '';
         popup.remove();
       });
     },

@@ -19,8 +19,10 @@
       </div> -->
       <!-- 组件使用 -->
       <div class="example-box">
-        <p class="title">组件使用</p>
+        <!-- <p class="title">组件使用</p> -->
+        <span class="info">zoom: {{ zoom }}, lng: {{ center.lng }}, lat: {{ center.lat }}</span>
         <MapBoxComponent
+          ref="mapBoxRef"
           :map-style="MAP_BOX_COMPONENT_EXAMPLE_STYLE"
           :map-info-mark-geojson="mapBoxComponent_mapInfoMarkGeojson"
           :map-options="mapBoxComponent_mapOptions"
@@ -29,10 +31,15 @@
           class="map-content"
           @mouseenterInfoMarkLayer="mouseenterInfoMarkLayer"
           @clickInfoMarkLayer="clickInfoMarkLayer"
+          @move="onMapBoxComponentMove"
+          @zoom="onMapBoxComponentZoom"
+          @load="onMapBoxComponentLoad"
         />
       </div>
     </div>
     <button class="btn" @click="updatedMapBoxComponentData()">更新数据</button>
+    <!-- <button class="btn" @click="startRecording()">开始记录数据</button>
+    <button class="btn" @click="endRecording()">结束记录数据</button> -->
   </div>
 </template>
 
@@ -51,6 +58,9 @@ import {
   MAP_BOX_COMPONENT_EXAMPLE_STYLE,
   MAP_BOX_COMPONENT_EXAMPLE_MOCK,
   makeExampleMockGeojson,
+  SUZHOU_LAYER_SOURCE_GEOJSON,
+  ROUTE_LAYER_SOURCE_GEOJSON1,
+  ROUTE_LAYER_SOURCE_GEOJSON2,
 } from './config/map-box-component-example';
 
 export default {
@@ -68,10 +78,11 @@ export default {
       mapBoxComponent_mapInfoMarkGeojson: null,
       mapBoxComponent_mapOptions: {
         zoom: 14,
-        center: [120.62709987026642, 31.276455231411447],
+        center: [120.62528289632445, 31.308716691586113],
         hash: false,
         maxZoom: 17,
         minZoom: 2,
+        projection: 'mercator',
       },
       mapBoxComponent_iconSpritImg: {
         spritUrl: 'http://localhost:9528/icon-sprite.png', // 雪碧图url地址
@@ -89,13 +100,20 @@ export default {
             height: 30, // 图标高度
             x: 30, // 左上角位于雪碧图的x坐标
             y: 0, // 左上角位于雪碧图的y坐标
-          }
-        ]
+          },
+        ],
       },
       mapBoxComponent_titleMarker: {
         element: `<div class="place-title">标记点名称</div>`, // html 字符串
       },
       mapBoxComponent_setTimeout: null,
+      zoom: 0,
+      center: {
+        lng: 0,
+        lat: 0,
+      },
+      recordingInterval: null,
+      recordingData: [],
     };
   },
   mounted() {
@@ -117,8 +135,14 @@ export default {
     this.mapBoxComponent_setTimeout = setTimeout(() => {
       this.mapBoxComponent_mapInfoMarkGeojson = MAP_BOX_COMPONENT_EXAMPLE_MOCK;
     }, 1000);
+
+    // 添加地图中心点标记
+    // this.$refs.mapBoxRef.$el.insertAdjacentHTML(
+    //   'afterbegin',
+    //   `<div class="canter-mark"></div>`
+    // );
   },
-  updated() {},
+  updated() { },
   destroyed() {
     // clearInterval(this.placeInfoInterval);
     clearTimeout(this.mapBoxComponent_setTimeout);
@@ -295,6 +319,7 @@ export default {
     //     popup.remove();
     //   });
     // },
+    // 更新数据
     updatedMapBoxComponentData() {
       const placeInfos = [];
       const coordinates = [];
@@ -304,17 +329,33 @@ export default {
         placeInfos.push(Math.floor(Math.random() * 1000));
         const plusOrMinus = Math.random() < 0.5 ? -1 : 1;
         coordinates.push([
-          120.62709987026642 + Math.floor(Math.random() * 10) * 0.001 * plusOrMinus,
-          31.2764065231411447 + Math.floor(Math.random() * 10) * 0.001 * plusOrMinus,
+          this.mapBoxComponent_mapOptions.center[0] +
+          Math.floor(Math.random() * 10) * 0.001 * plusOrMinus,
+          this.mapBoxComponent_mapOptions.center[1] +
+          Math.floor(Math.random() * 10) * 0.001 * plusOrMinus,
         ]);
       }
-      this.mapBoxComponent_mapInfoMarkGeojson = makeExampleMockGeojson({ placeInfos, coordinates });
+      this.mapBoxComponent_mapInfoMarkGeojson = makeExampleMockGeojson({
+        placeInfos,
+        coordinates,
+      });
+      // 移除开始时的线路 {
+      if (this.$refs.mapBoxRef.mapChart.getLayer('routeLayer1')) {
+        this.$refs.mapBoxRef.mapChart.removeLayer('routeLayer1');
+      }
+      if (this.$refs.mapBoxRef.mapChart.getSource('routeLayerSource1')) {
+        this.$refs.mapBoxRef.mapChart.removeSource('routeLayerSource1');
+      }
+      if (this.$refs.mapBoxRef.mapChart.getLayer('routeLayer2')) {
+        this.$refs.mapBoxRef.mapChart.removeLayer('routeLayer2');
+      }
+      if (this.$refs.mapBoxRef.mapChart.getSource('routeLayerSource2')) {
+        this.$refs.mapBoxRef.mapChart.removeSource('routeLayerSource2');
+      }
+      // 移除开始时的线路 }
     },
-    clickInfoMarkLayer({
-      layerEvent,
-      mapChartObj,
-      mapboxgl,
-    }) {
+    // 鼠标点击 InfoMarkLayer
+    clickInfoMarkLayer({ layerEvent, mapChart, mapboxgl }) {
       const coordinates = layerEvent.features[0].geometry.coordinates.slice();
       const description = layerEvent.features[0].properties.description;
 
@@ -325,14 +366,11 @@ export default {
       new mapboxgl.Popup()
         .setLngLat(layerEvent.features[0].geometry.coordinates)
         .setHTML(description)
-        .addTo(mapChartObj);
+        .addTo(mapChart);
     },
-    mouseenterInfoMarkLayer({
-      layerEvent,
-      mapChartObj,
-      popup,
-    }) {
-      mapChartObj.getCanvas().style.cursor = 'pointer';
+    // 鼠标移入 InfoMarkLayer
+    mouseenterInfoMarkLayer({ layerEvent, mapChart, popup }) {
+      mapChart.getCanvas().style.cursor = 'pointer';
       const coordinates = layerEvent.features[0].geometry.coordinates.slice();
       const description = layerEvent.features[0].properties.description;
 
@@ -340,9 +378,100 @@ export default {
         coordinates[0] += layerEvent.lngLat.lng > coordinates[0] ? 360 : -360;
       }
 
-      popup.setLngLat(layerEvent.features[0].geometry.coordinates)
+      popup
+        .setLngLat(layerEvent.features[0].geometry.coordinates)
         .setHTML(description)
-        .addTo(mapChartObj);
+        .addTo(mapChart);
+    },
+    // load
+    onMapBoxComponentLoad({ zoom, center, mapChart }) {
+      this.zoom = zoom;
+      this.center = center;
+      // 使用 geojson 添加路线图1
+      mapChart.addSource('routeLayerSource1', ROUTE_LAYER_SOURCE_GEOJSON1);
+      // 使用 geojson 添加路线图2
+      mapChart.addSource('routeLayerSource2', ROUTE_LAYER_SOURCE_GEOJSON2);
+      // 使用 geojson 添加苏州城区范围
+      mapChart.addSource('suzhouLayerSource', SUZHOU_LAYER_SOURCE_GEOJSON);
+      // 添加 routeLayer1
+      mapChart.addLayer({
+        id: 'routeLayer1',
+        type: 'line',
+        source: 'routeLayerSource1',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#379309',
+          'line-width': 8,
+        },
+      });
+      // 添加 routeLayer2
+      mapChart.addLayer({
+        id: 'routeLayer2',
+        type: 'line',
+        source: 'routeLayerSource2',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#c6ab00',
+          'line-width': 8,
+        },
+      });
+      // 添加 suzhouLayer
+      mapChart.addLayer({
+        id: 'suzhouLayer',
+        type: 'line',
+        source: 'suzhouLayerSource',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#409eff',
+          'line-width': 8,
+        },
+      });
+    },
+    // move
+    onMapBoxComponentMove({ zoom, center }) {
+      this.zoom = zoom;
+      this.center = center;
+    },
+    // zoom
+    onMapBoxComponentZoom({ zoom, center }) {
+      this.zoom = zoom;
+      this.center = center;
+    },
+    // 开始记录数据
+    startRecording() {
+      this.recordingData = [];
+      this.recordingInterval = setInterval(() => {
+        this.recordingData.push([this.center.lng, this.center.lat]);
+      }, 500);
+    },
+    // 结束记录数据
+    endRecording() {
+      clearTimeout(this.recordingInterval);
+      // 去重
+      // console.log('===============1', JSON.stringify(this.recordingData));
+
+      let recordingDataLength = this.recordingData.length;
+      while (recordingDataLength--) {
+        const itemData = this.recordingData[recordingDataLength];
+        const findIndex = this.recordingData.findIndex((itemFind, indexFind) =>
+          itemData[0] === itemFind[0] && itemData[1] === itemFind[1]
+            ? indexFind
+            : -1
+        );
+        if (findIndex > 0) {
+          this.recordingData.splice(findIndex, 1);
+        }
+      }
+      console.log('===============', JSON.stringify(this.recordingData));
     },
     // 加载 canvas 例子
     // loadCanvasExample() {
@@ -423,12 +552,16 @@ export default {
 }
 
 .example-box {
+  margin: 24px;
+
   .title {
     font-size: 16px;
     text-align: center;
     margin-bottom: 4px;
   }
+
   .map-content {
+    position: relative;
     height: 800px;
     width: 800px;
     border: 1px solid #409eff;
@@ -447,15 +580,33 @@ export default {
   caret-color: transparent;
   margin: 24px auto;
 }
+
+.info {
+  font-family: "Consolas";
+}
 </style>
 
 <style lang="scss">
 .custom-color {
   color: #e6a23c;
 }
+
 .place-title {
   color: #e6a23c;
   text-shadow: 5px 5px 5px #666;
   font-weight: 800;
+}
+
+.canter-mark {
+  height: 10px;
+  width: 10px;
+  background-color: #f56c6c;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(50%, 50%);
+  border-radius: 50%;
+  border: 2px solid #409eff;
+  z-index: 999;
 }
 </style>
