@@ -38,8 +38,8 @@
       </div>
     </div>
     <button class="btn" @click="updatedMapBoxComponentData()">更新数据</button>
-    <button class="btn" @click="startRecording()">开始记录数据</button>
-    <button class="btn" @click="endRecording()">结束记录数据</button>
+    <!-- <button class="btn" @click="startRecording()">开始记录数据</button>
+    <button class="btn" @click="endRecording()">结束记录数据</button> -->
   </div>
 </template>
 
@@ -137,10 +137,10 @@ export default {
     }, 1000);
 
     // 添加地图中心点标记
-    this.$refs.mapBoxRef.$el.insertAdjacentHTML(
-      'afterbegin',
-      `<div class="canter-mark"></div>`
-    );
+    // this.$refs.mapBoxRef.$el.insertAdjacentHTML(
+    //   'afterbegin',
+    //   `<div class="canter-mark"></div>`
+    // );
   },
   updated() { },
   destroyed() {
