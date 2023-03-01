@@ -1,3 +1,5 @@
+// 编译来自版本 2.13.0，注释 src/ui/map.js 3305 行 this._authenticate();
+/* eslint-disable no-undef */
 /* Mapbox GL JS is Copyright © 2020 Mapbox and subject to the Mapbox Terms of Service ((https://www.mapbox.com/legal/tos/). */
 (function(global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory()
