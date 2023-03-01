@@ -20,7 +20,9 @@
       <!-- 组件使用 -->
       <div class="example-box">
         <!-- <p class="title">组件使用</p> -->
-        <span class="info">zoom: {{ zoom }}, lng: {{ center.lng }}, lat: {{ center.lat }}</span>
+        <span
+          class="info"
+        >zoom: {{ zoom }}, lng: {{ center.lng }}, lat: {{ center.lat }}</span>
         <MapBoxComponent
           ref="mapBoxRef"
           :map-style="MAP_BOX_COMPONENT_EXAMPLE_STYLE"
@@ -61,6 +63,8 @@ import {
   SUZHOU_LAYER_SOURCE_GEOJSON,
   ROUTE_LAYER_SOURCE_GEOJSON1,
   ROUTE_LAYER_SOURCE_GEOJSON2,
+  HIGHLIGHT_AREA_SOURCE_GEOJSON,
+  OCCLUSION_AREA_SOURCE_GEOJSON,
 } from './config/map-box-component-example';
 
 export default {
@@ -142,7 +146,7 @@ export default {
     //   `<div class="canter-mark"></div>`
     // );
   },
-  updated() { },
+  updated() {},
   destroyed() {
     // clearInterval(this.placeInfoInterval);
     clearTimeout(this.mapBoxComponent_setTimeout);
@@ -330,9 +334,9 @@ export default {
         const plusOrMinus = Math.random() < 0.5 ? -1 : 1;
         coordinates.push([
           this.mapBoxComponent_mapOptions.center[0] +
-          Math.floor(Math.random() * 10) * 0.001 * plusOrMinus,
+            Math.floor(Math.random() * 10) * 0.001 * plusOrMinus,
           this.mapBoxComponent_mapOptions.center[1] +
-          Math.floor(Math.random() * 10) * 0.001 * plusOrMinus,
+            Math.floor(Math.random() * 10) * 0.001 * plusOrMinus,
         ]);
       }
       // console.log('======= coordinates ========', JSON.stringify(coordinates));
@@ -341,17 +345,17 @@ export default {
         coordinates,
       });
       // 移除开始时的线路 {
-      if (this.$refs.mapBoxRef.mapChart.getLayer('routeLayer1')) {
-        this.$refs.mapBoxRef.mapChart.removeLayer('routeLayer1');
+      if (this.$refs.mapBoxRef.mapChart.getLayer('route-layer-1')) {
+        this.$refs.mapBoxRef.mapChart.removeLayer('route-layer-1');
       }
-      if (this.$refs.mapBoxRef.mapChart.getSource('routeLayerSource1')) {
-        this.$refs.mapBoxRef.mapChart.removeSource('routeLayerSource1');
+      if (this.$refs.mapBoxRef.mapChart.getSource('route-layer-source-1')) {
+        this.$refs.mapBoxRef.mapChart.removeSource('route-layer-source-1');
       }
-      if (this.$refs.mapBoxRef.mapChart.getLayer('routeLayer2')) {
-        this.$refs.mapBoxRef.mapChart.removeLayer('routeLayer2');
+      if (this.$refs.mapBoxRef.mapChart.getLayer('route-layer-2')) {
+        this.$refs.mapBoxRef.mapChart.removeLayer('route-layer-2');
       }
-      if (this.$refs.mapBoxRef.mapChart.getSource('routeLayerSource2')) {
-        this.$refs.mapBoxRef.mapChart.removeSource('routeLayerSource2');
+      if (this.$refs.mapBoxRef.mapChart.getSource('route-layer-source-2')) {
+        this.$refs.mapBoxRef.mapChart.removeSource('route-layer-source-2');
       }
       // 移除开始时的线路 }
     },
@@ -388,54 +392,114 @@ export default {
     onMapBoxComponentLoad({ zoom, center, mapChart }) {
       this.zoom = zoom;
       this.center = center;
-      // 使用 geojson 添加路线图1
-      mapChart.addSource('routeLayerSource1', ROUTE_LAYER_SOURCE_GEOJSON1);
-      // 使用 geojson 添加路线图2
-      mapChart.addSource('routeLayerSource2', ROUTE_LAYER_SOURCE_GEOJSON2);
+      // 添加苏州城区范围
+      this.addSuzhouLayer({ mapChart });
+      // 添加高亮区域
+      this.addHighlightAreaLayer({ mapChart });
+      // 添加路线图1
+      this.addRouteLayer1({ mapChart });
+      // 添加路线图2
+      this.addRouteLayer2({ mapChart });
+      // 添加遮盖区域
+      this.addOcclusionArea({ mapChart });
+    },
+    // 添加苏州城区范围
+    addSuzhouLayer({ mapChart }) {
       // 使用 geojson 添加苏州城区范围
-      mapChart.addSource('suzhouLayerSource', SUZHOU_LAYER_SOURCE_GEOJSON);
-      // 添加 routeLayer1
-      mapChart.addLayer({
-        id: 'routeLayer1',
-        type: 'line',
-        source: 'routeLayerSource1',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': '#379309',
-          'line-width': 8,
-        },
-      });
-      // 添加 routeLayer2
-      mapChart.addLayer({
-        id: 'routeLayer2',
-        type: 'line',
-        source: 'routeLayerSource2',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': '#aa3d1c',
-          'line-width': 8,
-        },
-      });
+      mapChart.addSource('suzhou-layer-source', SUZHOU_LAYER_SOURCE_GEOJSON);
       // 添加 suzhouLayer
       mapChart.addLayer({
         id: 'suzhouLayer',
         type: 'line',
-        source: 'suzhouLayerSource',
+        source: 'suzhou-layer-source',
         layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
+          // 'line-join': 'round',
+          // 'line-cap': 'round',
         },
         paint: {
           'line-color': '#409eff',
           'line-width': 8,
         },
       });
+    },
+    // 添加高亮区域
+    addHighlightAreaLayer({ mapChart }) {
+      // 使用 geojson 添加高亮区域
+      mapChart.addSource('highlight-area-source', HIGHLIGHT_AREA_SOURCE_GEOJSON);
+      // 在 suzhouLayer 图层下，添加 高亮区域 图层
+      mapChart.addLayer(
+        {
+          id: 'highlightAreaLayer',
+          type: 'fill',
+          source: 'highlight-area-source',
+          layout: {},
+          paint: {
+            'fill-color': '#f08',
+            'fill-opacity': 0.2,
+          },
+        },
+        'suzhouLayer'
+      );
+    },
+    // 添加路线图1
+    addRouteLayer1({ mapChart }) {
+      // 使用 geojson 添加路线图1
+      mapChart.addSource('route-layer-source-1', ROUTE_LAYER_SOURCE_GEOJSON1);
+      // 添加 route-layer-1
+      mapChart.addLayer({
+        id: 'route-layer-1',
+        type: 'line',
+        source: 'route-layer-source-1',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#00d704',
+          'line-width': 8,
+        },
+      });
+    },
+    // 添加路线图2
+    addRouteLayer2({ mapChart }) {
+      // 使用 geojson 添加路线图2
+      mapChart.addSource('route-layer-source-2', ROUTE_LAYER_SOURCE_GEOJSON2);
+      // 添加 route-layer-2
+      mapChart.addLayer({
+        id: 'route-layer-2',
+        type: 'line',
+        source: 'route-layer-source-2',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#b8cb0a',
+          'line-width': 8,
+        },
+      });
+    },
+    // 添加遮盖区域
+    addOcclusionArea({ mapChart }) {
+      mapChart.addSource('occlusion-area-source', OCCLUSION_AREA_SOURCE_GEOJSON);
+
+      mapChart.loadImage(
+        'http://localhost:9528/occlusion-area.jpg',
+        (err, image) => {
+          if (err) throw err;
+
+          mapChart.addImage('occlusion-area-img', image);
+
+          mapChart.addLayer({
+            id: 'occlusion-area-layer',
+            type: 'fill',
+            source: 'occlusion-area-source',
+            paint: {
+              'fill-pattern': 'occlusion-area-img',
+            },
+          });
+        }
+      );
     },
     // move
     onMapBoxComponentMove({ zoom, center }) {
