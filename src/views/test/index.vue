@@ -89,7 +89,7 @@ export default {
         projection: 'mercator',
       },
       mapBoxComponent_iconSpritImg: {
-        spritUrl: 'http://localhost:9528/icon-sprite.png', // 雪碧图url地址
+        spritUrl: '/icon-sprite.png', // 雪碧图url地址
         iconInfos: [
           {
             key: 'icon-target1', // 图标的唯一key
@@ -193,7 +193,7 @@ export default {
     //   const canvas = document.createElement('canvas');
     //   const ctx = canvas.getContext('2d', { willReadFrequently: true });
     //   const iconSpritImg = new Image();
-    //   iconSpritImg.src = 'http://localhost:9528/icon-sprite.png';
+    //   iconSpritImg.src = '/icon-sprite.png';
     //   iconSpritImg.onload = () => {
     //     canvas.width = iconSpritImg.width;
     //     canvas.height = iconSpritImg.height;
@@ -484,7 +484,7 @@ export default {
       mapChart.addSource('occlusion-area-source', OCCLUSION_AREA_SOURCE_GEOJSON);
 
       mapChart.loadImage(
-        'http://localhost:9528/occlusion-area.jpg',
+        '/occlusion-area.jpg',
         (err, image) => {
           if (err) throw err;
 
